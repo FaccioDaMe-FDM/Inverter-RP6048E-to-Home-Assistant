@@ -1,6 +1,6 @@
 # Inverter-RP6048E-to-Home-Assistant
 
-# Home Assistant integration of Inverter RP6048E with Modbus TCP Hex String on rs485 serial port.
+# Home Assistant integration of Inverter RP6048E with Modbus TCP Custom String on rs485 serial port.
 
 To make the integration work, you must replace the following values in the code:
 
