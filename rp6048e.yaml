@@ -1,0 +1,215 @@
+###   Inverter RP6048E   ###
+
+sensor:
+
+  - platform: tcp
+    name: rp6048e_1
+    host: 192.178.xxx.xxx                      ###   add converter ip address   ###
+    port: 23xx                                 ###   add converter port         ###
+    timeout: 1
+    scan_interval: 2
+    buffer_size: 85
+    payload: "\x51\x36\x0D"
+    value_template: "{{ value }}"
+
+template:
+  - sensor: 
+
+      ## Volt Ingresso Rete 
+
+      - name: RP6048E_1_In_Rete_Volt
+        unique_id: rp6048e_1_in_rete_volt
+        state: >
+            {{ states('sensor.rp6048e_1').split(' ')[0] | replace("(","") }}
+        unit_of_measurement: "V"
+
+      ## Frequenza Ingresso Rete
+
+      - name: RP6048E_1_In_Rete_Freq
+        unique_id: rp6048e_1_in_rete_freq
+        state: "{{ states('sensor.rp6048e_1').split(' ')[1] }}"
+        unit_of_measurement: "Hz"
+
+      ## Volt Uscita AC
+
+      - name: RP6048E_1_Out_AC_Volt
+        unique_id: rp6048e_1_out_ac_volt
+        state: "{{ states('sensor.rp6048e_1').split(' ')[2] }}"
+        unit_of_measurement: "V"
+
+      ## Frequenza Uscita AC
+
+      - name: RP6048E_1_Out_AC_Freq
+        unique_id: rp6048e_1_out_ac_freq
+        state: "{{ states('sensor.rp6048e_1').split(' ')[3] }}"
+        unit_of_measurement: "Hz"
+
+      ## Volt Ingresso DC
+
+      - name: RP6048E_1_In_DC_Volt
+        unique_id: rp6048e_1_in_dc_volt
+        state: >
+            {{ states('sensor.rp6048e_1').split(' ')[4] |float * 4 }}
+        unit_of_measurement: "V"
+
+      ## SOC Batteria
+
+      - name: RP6048E_1_Batt_Soc
+        unique_id: rp6048e_1_batt_soc
+        state: "{{ states('sensor.rp6048e_1').split(' ')[5] }}"
+        unit_of_measurement: "%"
+
+      ## Corrente Carica Batteria
+
+      - name: RP6048E_1_Current_Charge_Batt
+        unique_id: rp6048e_1_current_charge_batt
+        state: "{{ states('sensor.rp6048e_1').split(' ')[6] | float }}"
+        unit_of_measurement: "A"
+
+      ## Uscita AC Potenza Apparente (VA)  ## S = √P² + Q²
+
+      - name: RP6048E_1_Out_AC_Pot_Apparente
+        unique_id: rp6048e_1_out_ac_pot_apparente
+        state: "{{ states('sensor.rp6048e_1').split(' ')[10] | int * 10 }}"
+        unit_of_measurement: "VA"
+
+      ## Uscita AC Watt Attiva
+
+      - name: RP6048E_1_Out_AC_Pot_Attiva
+        unique_id: rp6048e_1_out_ac_pot_attiva
+        device_class: energy 
+        state: "{{ states('sensor.rp6048e_1').split(' ')[11] | int * 10 }}"
+        unit_of_measurement: "W"
+
+      ## Fattore Potenza PF  ## cosφ = P / S
+
+      - name: RP6048E_1_PF
+        unique_id: rp6048e_1_pf
+        state: "{{ (states('sensor.rp6048e_1_out_ac_pot_attiva') |float(0) / 
+                    states('sensor.rp6048e_1_out_ac_pot_apparente') |float(0) ) |round(2)}}"
+
+      ## Livello Uscita AC 
+
+      - name: RP6048E_1_Out_AC_Level
+        unique_id: rp6048e_1_out_ac_level
+        state: "{{ states('sensor.rp6048e_1').split(' ')[12] }}"
+        unit_of_measurement: "%"
+
+      ## Temperatura
+
+      - name: RP6048E_1_Temperatura
+        unique_id: rp6048e_1_temperatura
+        state: "{{ states('sensor.rp6048e_1').split(' ')[13] }}"
+        unit_of_measurement: "°C"
+
+      ## Stato Funzionamento Inverter (Batteria o Rete)
+
+      - name: RP6048E_1_Status
+        unique_id: rp6048e_1_status
+        state: >
+            {% set Status = states('sensor.rp6048e_1').split(' ')[14] | string %}
+            {% if Status == "B" %}
+              Battery
+            {% elif Status == "L" %}
+              Line
+            {% else %}
+              {{ Status }}
+            {% endif %}
+
+      ## Versione Software
+
+      - name: RP6048E_1_Version
+        unique_id: rp6048e_1_version
+        state: "{{ states('sensor.rp6048e_1').split(' ')[17] }}"
+
+    
+      ## Errori Inverter 
+
+      - name: RP6048E_1_Error
+        unique_id: rp6048e_1_error
+        state: >
+            {% set ErrorCode = states('sensor.rp6048e_1').split(' ')[16] | string %}
+            {% if ErrorCode == "00" %}
+              No Error
+            {% elif ErrorCode == "02" %}
+              Inverter over temperature
+            {% elif ErrorCode == "03" %}
+              Battery voltage overcharge
+            {% elif ErrorCode == "04" %}
+              Battery voltage is too low
+            {% elif ErrorCode == "05" %}
+              Output short circuit
+            {% elif ErrorCode == "06" %}
+              Output is too high
+            {% elif ErrorCode == "07" %}
+              Inverter over load
+            {% elif ErrorCode == "08" %}
+              Output too low
+            {% elif ErrorCode == "12" %}
+              PV input voltage is too low
+            {% elif ErrorCode == "13" %}
+              PV input voltage is too higher
+            {% elif ErrorCode == "14" %}
+              PV over current
+            {% elif ErrorCode == "15" %}
+              PV over temperature
+            {% elif ErrorCode == "88" %}
+              Transformer phase reversal
+            {% elif ErrorCode == "89" %}
+              Frequency is out of range
+            {% elif ErrorCode == "96" %}
+              Communication failure between inverter and Lithium battery
+            {% elif ErrorCode == "97" %}
+              Inverter fail to communicate with MPPT
+            {% elif ErrorCode == "98" %}
+              Transformer over-temperature
+            {% elif ErrorCode == "99" %}
+              Inverter fail to slow start
+            {% else %}
+              {{ ErrorCode }}
+            {% endif %}
+
+      ## Ampere Uscita AC
+
+      - name: RP6048E_1_Out_AC_Ampere
+        unique_id: rp6048e_1_out_ac_ampere
+        state: "{{ (states('sensor.rp6048e_1_out_ac_pot_attiva') | float(0) /
+                    states('sensor.rp6048e_1_out_ac_volt') | float(0) ) |round(2) }}"
+        unit_of_measurement: A
+
+      ## Ampere Ingresso DC
+
+      - name: RP6048E_1_In_DC_Ampere
+        unique_id: rp6048e_1_In_dc_ampere
+        state: "{{ (states('sensor.rp6048e_1_in_dc_watt') | float(0) /
+                    states('sensor.rp6048e_1_in_dc_volt') | float(0) ) |round(2) }}"
+        unit_of_measurement: A
+
+      ## Ingresso DC Watt
+
+      - name: RP6048E_1_In_DC_Watt
+        unique_id: rp6048e_1_in_dc_watt
+        state: "{{ (states('sensor.epever_1_power_out') | float(0) +                  ###   add your sensor mppt power          ### 
+                    states('sensor.epever_2_power_out') | float(0) +                  ###   add your sensor mppt power          ### 
+                    states('sensor.shunt_kgf_power_out') | float(0) -                 ###   add your sensor battery power out   ### 
+                    states('sensor.shunt_kgf_power_in') | float(0) ) |round(0) }}"    ###   add your sensor battery power in    ### 
+        unit_of_measurement: 'W'
+
+      ## Uscita AC Potenza Reattiva    ## potenza reattiva Q = V * I * φ  (VAR)
+
+      - name: RP6048E_1_Out_AC_Pot_Reattiva
+        unique_id: rp6048e_1_out_ac_pot_reattiva
+        state: "{{ (states('sensor.rp6048e_1_out_ac_volt') |float(0) * 
+                    states('sensor.rp6048e_1_out_ac_ampere') |float(0) * 
+                    states('sensor.rp6048e_1_pf') |float(0) ) |round(0) }}" 
+        unit_of_measurement: "VAR"
+
+      ## Trasformazione DC to AC - Efficenza Inverter ##
+      - name: efficenza_bestione_1
+        unique_id: efficenza_bestione_1
+        unit_of_measurement: '%'
+        state: "{{ '{:.2f}'.format(states('sensor.rp6048e_1_out_ac_pot_attiva') |float(0) / 
+                    states('sensor.rp6048e_1_in_dc_watt') |float(0) * 100 ) }}"           
+
+
+
